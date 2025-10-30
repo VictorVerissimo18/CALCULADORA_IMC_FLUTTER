@@ -4,7 +4,6 @@ void main() => runApp(
       MaterialApp(
         home: Home(),
         debugShowCheckedModeBanner: false,
-        
       ),
     );
 
@@ -14,11 +13,11 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  TextEditingController _weightController = TextEditingController();
-  TextEditingController _heightController = TextEditingController();
-  String _result;
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  String _result = "Informe seus dados";
 
   @override
   void initState() {
@@ -37,22 +36,23 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: buildAppBar(),
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-            padding: EdgeInsets.all(20.0), child: buildForm()));
+      appBar: buildAppBar(),
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: buildForm(),
+      ),
+    );
   }
 
   AppBar buildAppBar() {
     return AppBar(
-      title: Text('Calculadora de IMC'),
+      title: const Text('Calculadora de IMC'),
       backgroundColor: Colors.blue,
       actions: <Widget>[
         IconButton(
-          icon: Icon(Icons.refresh),
-          onPressed: () {
-            resetFields();
-          },
+          icon: const Icon(Icons.refresh),
+          onPressed: resetFields,
         )
       ],
     );
@@ -65,13 +65,15 @@ class _HomeState extends State<Home> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           buildTextFormField(
-              label: "Peso (kg)",
-              error: "Insira seu peso!",
-              controller: _weightController),
+            label: "Peso (kg)",
+            error: "Insira seu peso!",
+            controller: _weightController,
+          ),
           buildTextFormField(
-              label: "Altura (cm)",
-              error: "Insira uma altura!",
-              controller: _heightController),
+            label: "Altura (cm)",
+            error: "Insira uma altura!",
+            controller: _heightController,
+          ),
           buildTextResult(),
           buildCalculateButton(),
         ],
@@ -80,59 +82,83 @@ class _HomeState extends State<Home> {
   }
 
   void calculateImc() {
-    double weight = double.parse(_weightController.text);
-    double height = double.parse(_heightController.text) / 100.0;
-    double imc = weight / (height * height);
+    final double weight = double.tryParse(_weightController.text) ?? 0.0;
+    final double height = (double.tryParse(_heightController.text) ?? 0.0) / 100.0;
+
+    if (height == 0 || weight == 0) {
+      setState(() {
+        _result = "Preencha os dados corretamente!";
+      });
+      return;
+    }
+
+    final double imc = weight / (height * height);
 
     setState(() {
-      _result = "IMC = ${imc.toStringAsPrecision(2)}\n";
-      if (imc < 18.6)
+      _result = "IMC = ${imc.toStringAsPrecision(4)}\n";
+
+      if (imc < 18.6) {
         _result += "Abaixo do peso";
-      else if (imc < 25.0)
+      } else if (imc < 25.0) {
         _result += "Peso ideal";
-      else if (imc < 30.0)
+      } else if (imc < 30.0) {
         _result += "Levemente acima do peso";
-      else if (imc < 35.0)
+      } else if (imc < 35.0) {
         _result += "Obesidade Grau I";
-      else if (imc < 40.0)
+      } else if (imc < 40.0) {
         _result += "Obesidade Grau II";
-      else
-        _result += "Obesidade Grau IIII";
+      } else {
+        _result += "Obesidade Grau III";
+      }
     });
   }
 
   Widget buildCalculateButton() {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 36.0),
-      child: RaisedButton(
+      padding: const EdgeInsets.symmetric(vertical: 36.0),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.all(15.0),
+        ),
         onPressed: () {
-          if (_formKey.currentState.validate()) {
+          if (_formKey.currentState?.validate() ?? false) {
             calculateImc();
           }
         },
-        child: Text('CALCULAR', style: TextStyle(color: Colors.white)),
+        child: const Text(
+          'CALCULAR',
+          style: TextStyle(color: Colors.white, fontSize: 18),
+        ),
       ),
     );
   }
 
   Widget buildTextResult() {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 36.0),
+      padding: const EdgeInsets.symmetric(vertical: 36.0),
       child: Text(
         _result,
         textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 20.0),
       ),
     );
   }
 
-  Widget buildTextFormField(
-      {TextEditingController controller, String error, String label}) {
+  Widget buildTextFormField({
+    required TextEditingController controller,
+    required String error,
+    required String label,
+  }) {
     return TextFormField(
       keyboardType: TextInputType.number,
       decoration: InputDecoration(labelText: label),
       controller: controller,
       validator: (text) {
-        return text.isEmpty ? error : null;
+        if (text == null || text.isEmpty) {
+          return error;
+        }
+        return null;
       },
     );
   }
